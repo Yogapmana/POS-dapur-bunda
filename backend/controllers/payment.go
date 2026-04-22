@@ -5,6 +5,7 @@ import (
 
 	"pos-backend/config"
 	"pos-backend/models"
+	"pos-backend/ws"
 
 	"github.com/gin-gonic/gin"
 )
@@ -34,12 +35,12 @@ func ProcessPayment(c *gin.Context) {
 
 	// Find the order
 	var order models.Order
-	if err := config.DB.Preload("OrderItems.MenuItem").First(&order, input.OrderID).Error; err != nil {
+	if err := config.DB.Preload("OrderItems.MenuItem").Preload("Payment").First(&order, input.OrderID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Order not found"})
 		return
 	}
 
-	if order.Status == "paid" {
+	if order.Payment != nil && order.Payment.ID != 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Order already paid"})
 		return
 	}
@@ -84,18 +85,23 @@ func ProcessPayment(c *gin.Context) {
 		return
 	}
 
-	// Update order status to paid and assign cashier
-	order.Status = "paid"
+	// For pay-before-cook, order status becomes pending (to be cooked by kitchen)
+	order.Status = "pending"
 	order.UserID = userID
 	config.DB.Save(&order)
 
-	// Free the table
-	if order.TableID != nil {
-		config.DB.Model(&models.Table{}).Where("id = ?", *order.TableID).Update("status", "available")
-	}
+	// Free the table only when the order is FINISHED, not when paid!
+	// Wait, if it's pay-before-cook, the customer is still sitting at the table.
+	// So we should NOT free the table here!
+	// Remove the TableID status update from here.
 
 	// Reload full order
 	config.DB.Preload("OrderItems.MenuItem").Preload("Table").Preload("User").Preload("Payment").First(&order, order.ID)
+
+	// Broadcast to Kitchen (new order ready to cook)
+	if ws.GlobalHub != nil {
+		ws.GlobalHub.BroadcastMessage("new_order", order)
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":       "Payment successful",

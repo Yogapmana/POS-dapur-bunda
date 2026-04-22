@@ -24,10 +24,16 @@ import {
   CreditCard,
   Receipt,
   RefreshCw,
+  Plus,
 } from "lucide-react";
 import Link from "next/link";
+import { KasirOrderModal } from "./KasirOrderModal";
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
+  unpaid: {
+    label: "Belum Lunas",
+    color: "bg-red-100 text-red-800 border-red-200",
+  },
   pending: {
     label: "Menunggu",
     color: "bg-yellow-100 text-yellow-800 border-yellow-200",
@@ -50,6 +56,42 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
   },
 };
 
+function OrderListItem({ order, selectedOrder, setSelectedOrder, setChangeAmount, isFaded = false }: any) {
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(price);
+
+  return (
+    <button
+      onClick={() => {
+        setSelectedOrder(order);
+        setChangeAmount(null);
+      }}
+      className={`w-full p-4 text-left hover:bg-muted/50 transition-colors cursor-pointer ${
+        selectedOrder?.id === order.id ? "bg-muted opacity-100" : ""
+      } ${isFaded && selectedOrder?.id !== order.id ? "opacity-60" : ""}`}
+    >
+      <div className="flex items-center justify-between mb-1">
+        <span className="font-bold text-sm">Order #{order.id}</span>
+        <Badge className={STATUS_MAP[order.status]?.color || ""}>
+          {STATUS_MAP[order.status]?.label || order.status}
+        </Badge>
+      </div>
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span>
+          Meja {order.table?.number || "-"} • {order.order_items?.length || 0} item
+        </span>
+        <span className="font-mono font-medium text-foreground">
+          {formatPrice(order.total_amount)}
+        </span>
+      </div>
+    </button>
+  );
+}
+
 export default function KasirPage() {
   const { initialize } = useAuthStore();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -60,6 +102,7 @@ export default function KasirPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [changeAmount, setChangeAmount] = useState<number | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
 
   useEffect(() => {
     initialize();
@@ -126,10 +169,11 @@ export default function KasirPage() {
       minimumFractionDigits: 0,
     }).format(price);
 
-  const activeOrders = orders.filter((o) =>
-    ["pending", "processing", "done"].includes(o.status)
+  const unpaidOrders = orders.filter((o) => o.status === "unpaid");
+  const kitchenOrders = orders.filter((o) =>
+    ["pending", "processing"].includes(o.status)
   );
-  const paidOrders = orders.filter((o) => o.status === "paid");
+  const doneOrders = orders.filter((o) => ["done", "paid"].includes(o.status));
 
   return (
     <div className="flex h-[calc(100vh-3.5rem)]">
@@ -137,14 +181,27 @@ export default function KasirPage() {
       <div className="w-96 border-r border-border bg-card overflow-y-auto">
         <div className="p-4 border-b border-border flex items-center justify-between">
           <h2 className="font-bold">Pesanan Hari Ini</h2>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={fetchOrders}
-            className="cursor-pointer"
-          >
-            <RefreshCw size={14} />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => setIsOrderModalOpen(true)}
+              className="cursor-pointer h-8 px-2"
+              title="Buat Pesanan Baru"
+            >
+              <Plus size={16} className="mr-1" />
+              Baru
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={fetchOrders}
+              className="cursor-pointer h-8 w-8 p-0"
+              title="Refresh"
+            >
+              <RefreshCw size={14} />
+            </Button>
+          </div>
         </div>
 
         {isLoading ? (
@@ -153,81 +210,41 @@ export default function KasirPage() {
           </div>
         ) : (
           <div className="divide-y divide-border">
-            {activeOrders.length === 0 && paidOrders.length === 0 ? (
+            {unpaidOrders.length === 0 && kitchenOrders.length === 0 && doneOrders.length === 0 ? (
               <div className="p-8 text-center text-muted-foreground text-sm">
                 Belum ada pesanan hari ini
               </div>
             ) : (
               <>
-                {activeOrders.map((order) => (
-                  <button
-                    key={order.id}
-                    onClick={() => {
-                      setSelectedOrder(order);
-                      setChangeAmount(null);
-                    }}
-                    className={`w-full p-4 text-left hover:bg-muted/50 transition-colors cursor-pointer ${
-                      selectedOrder?.id === order.id ? "bg-muted" : ""
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-bold text-sm">
-                        Order #{order.id}
-                      </span>
-                      <Badge
-                        className={
-                          STATUS_MAP[order.status]?.color || ""
-                        }
-                      >
-                        {STATUS_MAP[order.status]?.label || order.status}
-                      </Badge>
+                {unpaidOrders.length > 0 && (
+                  <>
+                    <div className="px-4 py-2 bg-red-500/10 text-xs font-medium text-red-600">
+                      Belum Lunas ({unpaidOrders.length})
                     </div>
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>
-                        Meja {order.table?.number || "-"} •{" "}
-                        {order.order_items?.length || 0} item
-                      </span>
-                      <span className="font-mono font-medium text-foreground">
-                        {formatPrice(order.total_amount)}
-                      </span>
-                    </div>
-                  </button>
-                ))}
+                    {unpaidOrders.map((order) => (
+                      <OrderListItem key={order.id} order={order} selectedOrder={selectedOrder} setSelectedOrder={setSelectedOrder} setChangeAmount={setChangeAmount} />
+                    ))}
+                  </>
+                )}
 
-                {paidOrders.length > 0 && (
+                {kitchenOrders.length > 0 && (
+                  <>
+                    <div className="px-4 py-2 bg-blue-500/10 text-xs font-medium text-blue-600">
+                      Dapur / Diproses ({kitchenOrders.length})
+                    </div>
+                    {kitchenOrders.map((order) => (
+                      <OrderListItem key={order.id} order={order} selectedOrder={selectedOrder} setSelectedOrder={setSelectedOrder} setChangeAmount={setChangeAmount} />
+                    ))}
+                  </>
+                )}
+
+                {doneOrders.length > 0 && (
                   <>
                     <div className="px-4 py-2 bg-muted/30 text-xs font-medium text-muted-foreground">
-                      Sudah Lunas ({paidOrders.length})
+                      Selesai ({doneOrders.length})
                     </div>
-                    {paidOrders.slice(0, 5).map((order) => (
-                      <button
-                        key={order.id}
-                        onClick={() => {
-                          setSelectedOrder(order);
-                          setChangeAmount(null);
-                        }}
-                        className={`w-full p-4 text-left hover:bg-muted/50 transition-colors opacity-60 cursor-pointer ${
-                          selectedOrder?.id === order.id
-                            ? "bg-muted opacity-100"
-                            : ""
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-bold text-sm">
-                            Order #{order.id}
-                          </span>
-                          <Badge className={STATUS_MAP.paid.color}>Lunas</Badge>
-                        </div>
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <span>
-                            Meja {order.table?.number || "-"} •{" "}
-                            {order.payment?.method || "-"}
-                          </span>
-                          <span className="font-mono font-medium text-foreground">
-                            {formatPrice(order.total_amount)}
-                          </span>
-                        </div>
-                      </button>
+                    {doneOrders.slice(0, 10).map((order) => (
+                      <OrderListItem key={order.id} order={order} selectedOrder={selectedOrder} setSelectedOrder={setSelectedOrder} setChangeAmount={setChangeAmount} isFaded />
                     ))}
                   </>
                 )}
@@ -309,60 +326,51 @@ export default function KasirPage() {
             </Card>
 
             {/* Action Buttons */}
-            {selectedOrder.status !== "paid" &&
-              selectedOrder.status !== "cancelled" && (
-                <div className="flex gap-3">
-                  {selectedOrder.status === "pending" && (
-                    <Button
-                      onClick={() =>
-                        handleStatusChange(selectedOrder.id, "processing")
-                      }
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
-                    >
-                      <CheckCircle size={16} className="mr-2" />
-                      Proses Pesanan
-                    </Button>
-                  )}
-                  {selectedOrder.status === "processing" && (
-                    <Button
-                      onClick={() =>
-                        handleStatusChange(selectedOrder.id, "done")
-                      }
-                      className="flex-1 bg-success hover:bg-success/90 text-white cursor-pointer"
-                    >
-                      <CheckCircle size={16} className="mr-2" />
-                      Tandai Siap
-                    </Button>
-                  )}
-                  {(selectedOrder.status === "done" ||
-                    selectedOrder.status === "pending" ||
-                    selectedOrder.status === "processing") && (
-                    <Button
-                      onClick={() => {
-                        setPaymentAmount(
-                          String(selectedOrder.total_amount)
-                        );
-                        setIsPaymentOpen(true);
-                        setChangeAmount(null);
-                      }}
-                      className="flex-1 bg-secondary hover:bg-secondary/90 text-secondary-foreground cursor-pointer"
-                    >
-                      <CreditCard size={16} className="mr-2" />
-                      Proses Pembayaran
-                    </Button>
-                  )}
-                </div>
-              )}
+            {selectedOrder.status !== "cancelled" && (
+              <div className="flex gap-3 mt-4">
+                {selectedOrder.status === "unpaid" && !selectedOrder.payment && (
+                  <Button
+                    onClick={() => {
+                      setPaymentAmount(String(selectedOrder.total_amount));
+                      setIsPaymentOpen(true);
+                      setChangeAmount(null);
+                    }}
+                    className="flex-1 bg-secondary hover:bg-secondary/90 text-secondary-foreground cursor-pointer"
+                  >
+                    <CreditCard size={16} className="mr-2" />
+                    Proses Pembayaran
+                  </Button>
+                )}
+                {selectedOrder.status === "pending" && (
+                  <Button
+                    onClick={() => handleStatusChange(selectedOrder.id, "processing")}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+                  >
+                    <CheckCircle size={16} className="mr-2" />
+                    Proses Pesanan (Manual)
+                  </Button>
+                )}
+                {selectedOrder.status === "processing" && (
+                  <Button
+                    onClick={() => handleStatusChange(selectedOrder.id, "done")}
+                    className="flex-1 bg-success hover:bg-success/90 text-white cursor-pointer"
+                  >
+                    <CheckCircle size={16} className="mr-2" />
+                    Tandai Siap (Manual)
+                  </Button>
+                )}
+              </div>
+            )}
 
             {/* If paid, show receipt link */}
-            {selectedOrder.status === "paid" && (
+            {selectedOrder.payment && (
               <Link href={`/kasir/struk/${selectedOrder.id}`}>
                 <Button
                   variant="outline"
-                  className="w-full cursor-pointer"
+                  className="w-full mt-4 cursor-pointer border-secondary text-secondary hover:bg-secondary/10"
                 >
                   <Receipt size={16} className="mr-2" />
-                  Lihat Struk
+                  Lihat Struk / Resi
                 </Button>
               </Link>
             )}
@@ -481,6 +489,16 @@ export default function KasirPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* New Order Modal */}
+      <KasirOrderModal
+        isOpen={isOrderModalOpen}
+        onClose={() => setIsOrderModalOpen(false)}
+        onOrderCreated={() => {
+          fetchOrders();
+          // Optionally we could try to select the new order, but fetchOrders is async
+        }}
+      />
     </div>
   );
 }

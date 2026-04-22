@@ -208,3 +208,46 @@ export const getTables = () => request<Table[]>("/tables");
 
 export const getTableByToken = (token: string) =>
   request<Table>(`/tables/token/${token}`);
+
+export const createTable = (data: Partial<Table>) =>
+  request<Table>("/tables", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+export const updateTableStatus = (id: number, status: string) =>
+  request<Table>(`/tables/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+
+export const deleteTable = (id: number) =>
+  request<{ message: string }>(`/tables/${id}`, { method: "DELETE" });
+
+// --- Reports ---
+export interface ChartDataItem {
+  label: string;
+  value: number;
+}
+
+export interface TopItem {
+  name: string;
+  quantity: number;
+  revenue: number;
+}
+
+export interface SalesSummary {
+  total_revenue: number;
+  total_orders: number;
+  average_order_value: number;
+}
+
+export const getDailyReport = () => request<ChartDataItem[]>("/reports/daily");
+export const getWeeklyReport = () => request<ChartDataItem[]>("/reports/weekly");
+export const getMonthlyReport = () => request<ChartDataItem[]>("/reports/monthly");
+
+export const getTopSellingItems = (period: string = "all") =>
+  request<TopItem[]>(`/reports/top-items?period=${period}`);
+
+export const getSalesSummary = (period: string = "all") =>
+  request<SalesSummary>(`/reports/summary?period=${period}`);

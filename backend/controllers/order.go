@@ -95,7 +95,7 @@ func CreateOrder(c *gin.Context) {
 	order := models.Order{
 		TableID:      input.TableID,
 		CustomerName: input.CustomerName,
-		Status:       "pending",
+		Status:       "unpaid",
 		TotalAmount:  totalAmount,
 		OrderItems:   orderItems,
 	}
@@ -113,9 +113,11 @@ func CreateOrder(c *gin.Context) {
 	// Reload with associations
 	config.DB.Preload("OrderItems.MenuItem").Preload("Table").First(&order, order.ID)
 
-	// Broadcast new order via WebSocket
+	// Broadcast new order to Kasir (not KDS yet, since it is unpaid)
+	// Currently WS is mainly for KDS, but Kasir might listen to it too.
+	// For now, Kasir can refresh or we can broadcast an "order_update" to trigger kasir refresh.
 	if ws.GlobalHub != nil {
-		ws.GlobalHub.BroadcastMessage("new_order", order)
+		ws.GlobalHub.BroadcastMessage("order_update", order)
 	}
 
 	c.JSON(http.StatusCreated, order)
@@ -133,10 +135,10 @@ func UpdateOrderStatus(c *gin.Context) {
 	}
 
 	validStatuses := map[string]bool{
-		"pending": true, "processing": true, "done": true, "paid": true, "cancelled": true,
+		"unpaid": true, "pending": true, "processing": true, "done": true, "paid": true, "cancelled": true,
 	}
 	if !validStatuses[input.Status] {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid status. Valid: pending, processing, done, paid, cancelled"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid status. Valid: unpaid, pending, processing, done, paid, cancelled"})
 		return
 	}
 

@@ -49,7 +49,7 @@ type Order struct {
 	Table        *Table      `gorm:"foreignKey:TableID" json:"table,omitempty"`
 	UserID       *uint       `json:"user_id"`
 	User         *User       `gorm:"foreignKey:UserID" json:"user,omitempty"`
-	Status       string      `gorm:"size:50;default:'pending';not null" json:"status"` // pending, processing, done, paid, cancelled
+	Status       string      `gorm:"size:50;default:'unpaid';not null" json:"status"` // unpaid, pending, processing, done, paid, cancelled
 	TotalAmount  float64     `gorm:"default:0" json:"total_amount"`
 	CustomerName string      `gorm:"size:255" json:"customer_name"`
 	OrderItems   []OrderItem `gorm:"foreignKey:OrderID" json:"order_items,omitempty"`

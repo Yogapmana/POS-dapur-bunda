@@ -5,6 +5,7 @@ import {
   getMenuItems,
   getCategories,
   createMenuItem,
+  updateMenuItem,
   deleteMenuItem,
   toggleMenuAvailability,
 } from "@/lib/api";
@@ -18,9 +19,22 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, Eye, EyeOff, Search } from "lucide-react";
+import { Plus, Trash2, Eye, EyeOff, Search, Pencil } from "lucide-react";
+
+interface MenuFormData {
+  name: string;
+  description: string;
+  price: number;
+  category_id: number;
+}
+
+const emptyForm: MenuFormData = {
+  name: "",
+  description: "",
+  price: 0,
+  category_id: 0,
+};
 
 export default function MenuManagementPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -28,15 +42,11 @@ export default function MenuManagementPage() {
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // New item form state
-  const [newItem, setNewItem] = useState({
-    name: "",
-    description: "",
-    price: 0,
-    category_id: 0,
-  });
+  // Dialog state
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [formData, setFormData] = useState<MenuFormData>(emptyForm);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -60,18 +70,48 @@ export default function MenuManagementPage() {
     fetchData();
   }, [fetchData]);
 
-  const handleCreateItem = async (e: React.FormEvent) => {
+  // Open dialog for CREATE
+  const openCreateDialog = () => {
+    setEditingItem(null);
+    setFormData(emptyForm);
+    setIsDialogOpen(true);
+  };
+
+  // Open dialog for EDIT
+  const openEditDialog = (item: MenuItem) => {
+    setEditingItem(item);
+    setFormData({
+      name: item.name,
+      description: item.description,
+      price: item.price,
+      category_id: item.category_id,
+    });
+    setIsDialogOpen(true);
+  };
+
+  // Handle form submit (create or edit)
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await createMenuItem({
-        ...newItem,
-        is_available: true,
-      });
-      setNewItem({ name: "", description: "", price: 0, category_id: 0 });
+      if (editingItem) {
+        // UPDATE
+        await updateMenuItem(editingItem.id, {
+          ...formData,
+          is_available: editingItem.is_available,
+        });
+      } else {
+        // CREATE
+        await createMenuItem({
+          ...formData,
+          is_available: true,
+        });
+      }
+      setFormData(emptyForm);
+      setEditingItem(null);
       setIsDialogOpen(false);
       fetchData();
     } catch (err) {
-      console.error("Failed to create item:", err);
+      console.error("Failed to save item:", err);
     }
   };
 
@@ -115,84 +155,93 @@ export default function MenuManagementPage() {
             Kelola daftar menu restoran Anda
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger
-            render={
-              <Button className="bg-secondary hover:bg-secondary/90 text-secondary-foreground cursor-pointer">
-                <Plus size={18} className="mr-2" />
-                Tambah Menu
-              </Button>
-            }
-          />
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Tambah Menu Baru</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleCreateItem} className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Nama Menu</label>
-                <Input
-                  value={newItem.name}
-                  onChange={(e) =>
-                    setNewItem({ ...newItem, name: e.target.value })
-                  }
-                  placeholder="Contoh: Nasi Goreng Spesial"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Deskripsi</label>
-                <Input
-                  value={newItem.description}
-                  onChange={(e) =>
-                    setNewItem({ ...newItem, description: e.target.value })
-                  }
-                  placeholder="Deskripsi singkat menu"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Harga (Rp)</label>
-                <Input
-                  type="number"
-                  value={newItem.price || ""}
-                  onChange={(e) =>
-                    setNewItem({ ...newItem, price: Number(e.target.value) })
-                  }
-                  placeholder="25000"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Kategori</label>
-                <select
-                  className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
-                  value={newItem.category_id}
-                  onChange={(e) =>
-                    setNewItem({
-                      ...newItem,
-                      category_id: Number(e.target.value),
-                    })
-                  }
-                  required
-                >
-                  <option value={0}>Pilih kategori</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <Button
-                type="submit"
-                className="w-full bg-primary hover:bg-primary/90 cursor-pointer"
-              >
-                Simpan Menu
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <Button
+          onClick={openCreateDialog}
+          className="bg-secondary hover:bg-secondary/90 text-secondary-foreground cursor-pointer"
+        >
+          <Plus size={18} className="mr-2" />
+          Tambah Menu
+        </Button>
       </div>
+
+      {/* Create / Edit Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={(open) => {
+        setIsDialogOpen(open);
+        if (!open) {
+          setEditingItem(null);
+          setFormData(emptyForm);
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingItem ? "Edit Menu" : "Tambah Menu Baru"}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Nama Menu</label>
+              <Input
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                placeholder="Contoh: Nasi Goreng Spesial"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Deskripsi</label>
+              <Input
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
+                placeholder="Deskripsi singkat menu"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Harga (Rp)</label>
+              <Input
+                type="number"
+                value={formData.price || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, price: Number(e.target.value) })
+                }
+                placeholder="25000"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Kategori</label>
+              <select
+                className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+                value={formData.category_id}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    category_id: Number(e.target.value),
+                  })
+                }
+                required
+              >
+                <option value={0}>Pilih kategori</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <Button
+              type="submit"
+              className="w-full bg-primary hover:bg-primary/90 cursor-pointer"
+            >
+              {editingItem ? "Simpan Perubahan" : "Simpan Menu"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Filters */}
       <div className="flex items-center gap-4">
@@ -297,6 +346,15 @@ export default function MenuManagementPage() {
                       </td>
                       <td className="py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openEditDialog(item)}
+                            title="Edit menu"
+                            className="cursor-pointer"
+                          >
+                            <Pencil size={16} />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"

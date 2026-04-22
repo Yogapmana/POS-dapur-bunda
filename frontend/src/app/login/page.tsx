@@ -18,7 +18,14 @@ export default function LoginPage() {
     e.preventDefault();
     try {
       await login(email, password);
-      router.push("/admin");
+      // Redirect based on role
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        router.push(user.role === "kasir" ? "/kasir" : "/admin");
+      } else {
+        router.push("/admin");
+      }
     } catch {
       // error is set in the store
     }
@@ -87,9 +94,10 @@ export default function LoginPage() {
                 </>
               )}
             </Button>
-            <p className="text-xs text-center text-muted-foreground mt-4">
-              Demo: admin@dapurbunda.com / admin123
-            </p>
+            <div className="text-xs text-center text-muted-foreground mt-4 space-y-0.5">
+              <p>Admin: admin@dapurbunda.com / admin123</p>
+              <p>Kasir: kasir@dapurbunda.com / admin123</p>
+            </div>
           </form>
         </CardContent>
       </Card>

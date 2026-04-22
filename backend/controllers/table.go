@@ -65,3 +65,23 @@ func UpdateTableStatus(c *gin.Context) {
 	config.DB.Save(&table)
 	c.JSON(http.StatusOK, table)
 }
+
+// DeleteTable removes a table
+func DeleteTable(c *gin.Context) {
+	id := c.Param("id")
+	
+	// Check if table exists
+	var table models.Table
+	if err := config.DB.First(&table, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Table not found"})
+		return
+	}
+
+	// Soft delete the table
+	if err := config.DB.Delete(&table).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Table deleted successfully"})
+}

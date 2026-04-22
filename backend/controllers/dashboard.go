@@ -28,13 +28,13 @@ func GetDashboardStats(c *gin.Context) {
 
 	// Today's revenue (sum of paid orders)
 	config.DB.Model(&models.Order{}).
-		Where("status = ? AND DATE(created_at) = ?", "paid", today).
+		Where("status IN ? AND DATE(created_at) = ?", []string{"pending", "processing", "done", "paid"}, today).
 		Select("COALESCE(SUM(total_amount), 0)").
 		Scan(&stats.TodayRevenue)
 
 	// Today's completed transactions
 	config.DB.Model(&models.Order{}).
-		Where("status = ? AND DATE(created_at) = ?", "paid", today).
+		Where("status IN ? AND DATE(created_at) = ?", []string{"pending", "processing", "done", "paid"}, today).
 		Count(&stats.TodayTransactions)
 
 	// Top selling menu item today
@@ -76,7 +76,7 @@ func GetDashboardStats(c *gin.Context) {
 func GetRecentTransactions(c *gin.Context) {
 	var orders []models.Order
 	config.DB.Preload("Table").Preload("Payment").Preload("User").
-		Where("status = ?", "paid").
+		Where("status IN ?", []string{"pending", "processing", "done", "paid"}).
 		Order("created_at desc").
 		Limit(10).
 		Find(&orders)

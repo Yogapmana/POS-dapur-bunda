@@ -34,7 +34,19 @@ export default function AdminLayout({
 
   useEffect(() => {
     initialize();
-  }, [initialize]);
+    const token = localStorage.getItem("token");
+    const userStr = localStorage.getItem("user");
+    
+    if (!token || !userStr) {
+      router.push("/login");
+      return;
+    }
+    
+    const u = JSON.parse(userStr);
+    if (u.role !== "admin") {
+      router.push("/kasir");
+    }
+  }, [initialize, router]);
 
   const handleLogout = () => {
     logout();

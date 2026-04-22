@@ -36,6 +36,7 @@ export default function SelfOrderPage({
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [customerName, setCustomerName] = useState("");
 
   const {
     items: cartItems,
@@ -96,7 +97,7 @@ export default function SelfOrderPage({
     try {
       const orderData = {
         table_id: table?.id,
-        customer_name: "",
+        customer_name: customerName.trim() || "",
         items: cartItems.map((item) => ({
           menu_item_id: item.id,
           quantity: item.quantity,
@@ -130,8 +131,8 @@ export default function SelfOrderPage({
         <p className="text-5xl font-bold font-mono text-secondary mb-6">
           #{orderSuccess}
         </p>
-        <p className="text-sm text-muted-foreground max-w-xs">
-          Pesanan Anda sedang diproses. Mohon tunggu di meja Anda.
+        <p className="text-sm text-muted-foreground max-w-xs mx-auto bg-amber-500/10 text-amber-600 p-3 rounded-lg border border-amber-500/20">
+          <strong>Penting:</strong> Harap segera melakukan pembayaran di Kasir agar pesanan dapat diproses oleh Dapur.
         </p>
         <Button
           onClick={() => setOrderSuccess(null)}
@@ -365,6 +366,18 @@ export default function SelfOrderPage({
             <DialogTitle>Konfirmasi Pesanan</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">
+                Nama Pemesan (Opsional)
+              </label>
+              <Input
+                placeholder="Masukkan nama Anda"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                className="w-full"
+              />
+            </div>
+            
             <p className="text-sm text-muted-foreground">
               Pastikan pesanan Anda sudah benar sebelum mengirim:
             </p>

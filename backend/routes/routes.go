@@ -30,6 +30,13 @@ func SetupRoutes(r *gin.Engine) {
 			protected.GET("/dashboard/stats", controllers.GetDashboardStats)
 			protected.GET("/dashboard/recent", controllers.GetRecentTransactions)
 
+			// Reports (admin only)
+			protected.GET("/reports/daily", middleware.RoleMiddleware("admin"), controllers.GetDailyReport)
+			protected.GET("/reports/weekly", middleware.RoleMiddleware("admin"), controllers.GetWeeklyReport)
+			protected.GET("/reports/monthly", middleware.RoleMiddleware("admin"), controllers.GetMonthlyReport)
+			protected.GET("/reports/top-items", middleware.RoleMiddleware("admin"), controllers.GetTopSellingItems)
+			protected.GET("/reports/summary", middleware.RoleMiddleware("admin"), controllers.GetSalesSummary)
+
 			// Categories (admin only)
 			protected.POST("/categories", middleware.RoleMiddleware("admin"), controllers.CreateCategory)
 			protected.PUT("/categories/:id", middleware.RoleMiddleware("admin"), controllers.UpdateCategory)
@@ -55,6 +62,7 @@ func SetupRoutes(r *gin.Engine) {
 			protected.GET("/tables", controllers.GetTables)
 			protected.POST("/tables", middleware.RoleMiddleware("admin"), controllers.CreateTable)
 			protected.PATCH("/tables/:id/status", controllers.UpdateTableStatus)
+			protected.DELETE("/tables/:id", middleware.RoleMiddleware("admin"), controllers.DeleteTable)
 		}
 	}
 

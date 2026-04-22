@@ -15,7 +15,11 @@ export default function KasirLayout({
 
   useEffect(() => {
     initialize();
-  }, [initialize]);
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/login");
+    }
+  }, [initialize, router]);
 
   const handleLogout = () => {
     logout();
