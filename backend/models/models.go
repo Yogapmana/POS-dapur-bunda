@@ -82,7 +82,7 @@ type Payment struct {
 type InventoryItem struct {
 	ID           uint      `gorm:"primaryKey" json:"id"`
 	Name         string    `gorm:"size:255;not null" json:"name"`
-	Unit         string    `gorm:"size:50;not null" json:"unit"` // kg, liter, pcs, etc
+	Unit         string    `gorm:"size:50;not null" json:"unit"`
 	CurrentStock float64   `gorm:"not null;default:0" json:"current_stock"`
 	MinStock     float64   `gorm:"not null;default:0" json:"min_stock"`
 	CreatedAt    time.Time `json:"created_at"`
@@ -92,11 +92,11 @@ type InventoryItem struct {
 type InventoryTransaction struct {
 	ID              uint          `gorm:"primaryKey" json:"id"`
 	InventoryItemID uint          `gorm:"not null" json:"inventory_item_id"`
-	InventoryItem   InventoryItem `gorm:"foreignKey:InventoryItemID" json:"inventory_item"`
-	Type            string        `gorm:"size:50;not null" json:"type"` // "in" (restock) or "out" (usage)
+	InventoryItem   InventoryItem `gorm:"foreignKey:InventoryItemID" json:"inventory_item,omitempty"`
+	Type            string        `gorm:"size:50;not null" json:"type"`
 	Quantity        float64       `gorm:"not null" json:"quantity"`
 	Notes           string        `gorm:"size:500" json:"notes"`
-	UserID          *uint         `json:"user_id"` // Kasir/Admin who recorded this
+	UserID          *uint         `json:"user_id"`
 	User            *User         `gorm:"foreignKey:UserID" json:"user,omitempty"`
 	CreatedAt       time.Time     `json:"created_at"`
 }

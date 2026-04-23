@@ -1,8 +1,10 @@
 package middleware
 
 import (
+	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -50,8 +52,30 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		c.Set("userID", claims["sub"])
-		c.Set("userRole", claims["role"])
+		// Handle sub claim - may be float64 (from JSON) or string
+		sub := claims["sub"]
+		switch v := sub.(type) {
+		case float64:
+			c.Set("userID", uint(v))
+		case uint:
+			c.Set("userID", v)
+		case int:
+			c.Set("userID", uint(v))
+		default:
+			c.Set("userID", sub)
+		}
+
+		// Handle role claim - ensure it's a string
+		role := claims["role"]
+		switch v := role.(type) {
+		case string:
+			c.Set("userRole", v)
+		case float64:
+			c.Set("userRole", strconv.FormatFloat(v, 'f', -1, 64))
+		default:
+			c.Set("userRole", "")
+		}
+
 		c.Next()
 	}
 }
@@ -60,6 +84,7 @@ func RoleMiddleware(roles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userRole, exists := c.Get("userRole")
 		if !exists {
+			log.Printf("[DEBUG] RoleMiddleware: userRole not found in context")
 			c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
 			c.Abort()
 			return
@@ -67,10 +92,13 @@ func RoleMiddleware(roles ...string) gin.HandlerFunc {
 
 		roleStr, ok := userRole.(string)
 		if !ok {
+			log.Printf("[DEBUG] RoleMiddleware: userRole is not a string, got %T", userRole)
 			c.JSON(http.StatusForbidden, gin.H{"error": "Invalid role"})
 			c.Abort()
 			return
 		}
+
+		log.Printf("[DEBUG] RoleMiddleware: userRole=%s, requiredRoles=%v", roleStr, roles)
 
 		for _, role := range roles {
 			if roleStr == role {

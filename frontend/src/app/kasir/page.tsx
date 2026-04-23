@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuthStore } from "@/store/authStore";
+import { useWebSocket } from "@/hooks/useWebSocket";
 import {
   getOrders,
   updateOrderStatus,
@@ -97,7 +98,7 @@ function OrderListItem({ order, selectedOrder, setSelectedOrder, setChangeAmount
 }
 
 export default function KasirPage() {
-  const { initialize } = useAuthStore();
+  const { initialize, token } = useAuthStore();
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
@@ -110,14 +111,15 @@ export default function KasirPage() {
 
   useEffect(() => {
     initialize();
-    // Check auth
-    const token = localStorage.getItem("token");
+  }, [initialize]);
+
+  useEffect(() => {
     if (!token) {
       window.location.href = "/login";
       return;
     }
     setIsReady(true);
-  }, [initialize]);
+  }, [token]);
 
   const fetchOrders = useCallback(async () => {
     if (!isReady) return;
@@ -131,11 +133,24 @@ export default function KasirPage() {
     }
   }, [isReady]);
 
+  // Set up WebSocket
+  const wsUrl = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8181/ws";
+  const { lastMessage } = useWebSocket(wsUrl);
+
+  useEffect(() => {
+    if (lastMessage) {
+      console.log("Kasir received WS message:", lastMessage);
+      if (lastMessage.type === "new_order" || lastMessage.type === "order_update") {
+        fetchOrders();
+      }
+    }
+  }, [lastMessage, fetchOrders]);
+
   useEffect(() => {
     if (!isReady) return;
     fetchOrders();
-    // Auto-refresh every 10 seconds
-    const interval = setInterval(fetchOrders, 10000);
+    // Keep the polling as a fallback backup, but less frequent (30 seconds)
+    const interval = setInterval(fetchOrders, 30000);
     return () => clearInterval(interval);
   }, [fetchOrders, isReady]);
 

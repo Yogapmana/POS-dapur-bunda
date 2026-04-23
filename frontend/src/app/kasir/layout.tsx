@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { LogOut } from "lucide-react";
@@ -12,14 +12,51 @@ export default function KasirLayout({
 }) {
   const { user, logout, initialize } = useAuthStore();
   const router = useRouter();
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     initialize();
-    const token = localStorage.getItem("token");
-    if (!token) {
-      router.push("/login");
-    }
-  }, [initialize, router]);
+  }, [initialize]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const timer = setTimeout(() => {
+      if (!mounted) return;
+      
+      const token = localStorage.getItem("token");
+      const userStr = localStorage.getItem("user");
+      
+      if (!token || !userStr) {
+        router.push("/login");
+        return;
+      }
+      
+      try {
+        const u = JSON.parse(userStr);
+        if (u.role === "admin") {
+          router.push("/admin");
+          return;
+        }
+        if (u.role !== "kasir") {
+          router.push("/login");
+          return;
+        }
+        if (mounted) setIsReady(true);
+      } catch {
+        router.push("/login");
+      }
+    }, 200);
+
+    return () => {
+      mounted = false;
+      clearTimeout(timer);
+    };
+  }, [router]);
+
+  if (!isReady) {
+    return null;
+  }
 
   const handleLogout = () => {
     logout();

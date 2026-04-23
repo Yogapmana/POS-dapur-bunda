@@ -18,10 +18,14 @@ func ExportSalesXLSX(c *gin.Context) {
 	var orders []models.Order
 
 	query := config.DB.Preload("Payment").Preload("User").Preload("Table").
-		Where("status IN ?", []string{"pending", "processing", "done", "paid"})
+		Where("status IN ?", []string{"pending", "processing", "done", "completed", "paid"})
 
 	if period == "daily" {
-		today := time.Now().Format("2006-01-02")
+		loc, _ := time.LoadLocation("Asia/Jakarta")
+		if loc == nil {
+			loc = time.FixedZone("Asia/Jakarta", 7*3600)
+		}
+		today := time.Now().In(loc).Format("2006-01-02")
 		query = query.Where("DATE(created_at) = ?", today)
 	} else if period == "weekly" {
 		query = query.Where("created_at >= current_date - interval '7 days'")
@@ -98,14 +102,18 @@ type ChartDataItem struct {
 
 // GetDailyReport returns revenue per hour for today
 func GetDailyReport(c *gin.Context) {
-	today := time.Now().Format("2006-01-02")
+	loc, _ := time.LoadLocation("Asia/Jakarta")
+	if loc == nil {
+		loc = time.FixedZone("Asia/Jakarta", 7*3600)
+	}
+	today := time.Now().In(loc).Format("2006-01-02")
 	data := []ChartDataItem{}
 
 	// Postgres specific date truncation/formatting
 	query := `
 		SELECT to_char(created_at, 'HH24:00') as label, SUM(total_amount) as value
 		FROM orders
-		WHERE status IN ('pending', 'processing', 'done', 'paid') AND DATE(created_at) = ?
+		WHERE status IN ('pending', 'processing', 'done', 'completed', 'paid') AND DATE(created_at) = ?
 		GROUP BY label
 		ORDER BY label ASC
 	`
@@ -125,7 +133,7 @@ func GetWeeklyReport(c *gin.Context) {
 	query := `
 		SELECT to_char(created_at, 'YYYY-MM-DD') as label, SUM(total_amount) as value
 		FROM orders
-		WHERE status IN ('pending', 'processing', 'done', 'paid') AND created_at >= current_date - interval '7 days'
+		WHERE status IN ('pending', 'processing', 'done', 'completed', 'paid') AND created_at >= current_date - interval '7 days'
 		GROUP BY label
 		ORDER BY label ASC
 	`
@@ -145,7 +153,7 @@ func GetMonthlyReport(c *gin.Context) {
 	query := `
 		SELECT to_char(created_at, 'YYYY-MM-DD') as label, SUM(total_amount) as value
 		FROM orders
-		WHERE status IN ('pending', 'processing', 'done', 'paid') AND date_trunc('month', created_at) = date_trunc('month', current_date)
+		WHERE status IN ('pending', 'processing', 'done', 'completed', 'paid') AND date_trunc('month', created_at) = date_trunc('month', current_date)
 		GROUP BY label
 		ORDER BY label ASC
 	`
@@ -176,13 +184,17 @@ func GetTopSellingItems(c *gin.Context) {
 		Select("menu_items.name, SUM(order_items.quantity) as quantity, SUM(order_items.subtotal) as revenue").
 		Joins("JOIN menu_items ON menu_items.id = order_items.menu_item_id").
 		Joins("JOIN orders ON orders.id = order_items.order_id").
-		Where("orders.status IN ?", []string{"pending", "processing", "done", "paid"}).
+		Where("orders.status IN ?", []string{"pending", "processing", "done", "completed", "paid"}).
 		Group("menu_items.name").
 		Order("quantity DESC").
 		Limit(10)
 		
 	if period == "daily" {
-		today := time.Now().Format("2006-01-02")
+		loc, _ := time.LoadLocation("Asia/Jakarta")
+		if loc == nil {
+			loc = time.FixedZone("Asia/Jakarta", 7*3600)
+		}
+		today := time.Now().In(loc).Format("2006-01-02")
 		query = query.Where("DATE(orders.created_at) = ?", today)
 	} else if period == "weekly" {
 		query = query.Where("orders.created_at >= current_date - interval '7 days'")
@@ -210,10 +222,14 @@ func GetSalesSummary(c *gin.Context) {
 	var summary SalesSummary
 	period := c.DefaultQuery("period", "all")
 	
-	query := config.DB.Model(&models.Order{}).Where("status IN ?", []string{"pending", "processing", "done", "paid"})
+	query := config.DB.Model(&models.Order{}).Where("status IN ?", []string{"pending", "processing", "done", "completed", "paid"})
 	
 	if period == "daily" {
-		today := time.Now().Format("2006-01-02")
+		loc, _ := time.LoadLocation("Asia/Jakarta")
+		if loc == nil {
+			loc = time.FixedZone("Asia/Jakarta", 7*3600)
+		}
+		today := time.Now().In(loc).Format("2006-01-02")
 		query = query.Where("DATE(created_at) = ?", today)
 	} else if period == "weekly" {
 		query = query.Where("created_at >= current_date - interval '7 days'")

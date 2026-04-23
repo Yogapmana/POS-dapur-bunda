@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { getOrders, updateOrderStatus } from "@/lib/api";
 import {
   ChefHat,
   Clock,
@@ -71,6 +74,7 @@ function ElapsedTimer({ createdAt }: { createdAt: string }) {
 }
 
 export default function KDSPage() {
+  const router = useRouter();
   const [orders, setOrders] = useState<KDSOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -79,27 +83,24 @@ export default function KDSPage() {
   // Fetch initial orders
   const fetchOrders = useCallback(async () => {
     try {
-      // Use a kasir token or public endpoint for initial load
       const token = localStorage.getItem("token");
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (token) headers["Authorization"] = `Bearer ${token}`;
-
-      const res = await fetch(`${API_BASE}/orders`, { headers });
-      if (res.ok) {
-        const data = await res.json();
-        const active = data.filter((o: KDSOrder) =>
-          ["pending", "processing"].includes(o.status)
-        );
-        setOrders(active);
+      if (!token) {
+        router.push("/login");
+        return;
       }
+      
+      const data = await getOrders();
+      const active = data.filter((o: KDSOrder) =>
+        ["pending", "processing"].includes(o.status)
+      );
+      setOrders(active);
     } catch (err) {
       console.error("Failed to fetch KDS orders:", err);
+      toast.error("Gagal mengambil pesanan. Pastikan Anda sudah login.");
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     fetchOrders();
@@ -109,12 +110,6 @@ export default function KDSPage() {
   const playSound = useCallback(() => {
     if (!soundEnabled) return;
     try {
-      if (!audioRef.current) {
-        audioRef.current = new Audio(
-          "data:audio/wav;base64,UklGRl9vT19teleYWZmbXQgEAAAAAEAAQBBIAAA" +
-            "QiAAABAAEAZGF0YTtvb18AAAA="
-        );
-      }
       // Use Web Audio API for a simple beep
       const ctx = new AudioContext();
       const osc = ctx.createOscillator();
@@ -146,26 +141,22 @@ export default function KDSPage() {
   // WebSocket handler
   const handleWSMessage = useCallback(
     (message: { type: string; data: unknown }) => {
+      console.log("KDS received WS message:", message);
       const order = message.data as KDSOrder;
 
-      if (message.type === "new_order") {
-        setOrders((prev) => {
-          // Avoid duplicates
-          if (prev.find((o) => o.id === order.id)) return prev;
-          return [order, ...prev];
-        });
-        playSound();
-      }
-
-      if (message.type === "order_update") {
-        if (["paid", "cancelled", "done"].includes(order.status)) {
-          // Remove from KDS
-          setOrders((prev) => prev.filter((o) => o.id !== order.id));
+      if (message.type === "new_order" || message.type === "order_update") {
+        if (["pending", "processing"].includes(order.status)) {
+          setOrders((prev) => {
+            const exists = prev.find((o) => o.id === order.id);
+            if (exists) {
+              return prev.map((o) => (o.id === order.id ? order : o));
+            }
+            if (message.type === "new_order") playSound();
+            return [order, ...prev];
+          });
         } else {
-          // Update in place
-          setOrders((prev) =>
-            prev.map((o) => (o.id === order.id ? order : o))
-          );
+          // If status is no longer pending/processing, remove it
+          setOrders((prev) => prev.filter((o) => o.id !== order.id));
         }
       }
     },
@@ -179,16 +170,8 @@ export default function KDSPage() {
 
   // Update order status
   const updateStatus = async (orderId: number, newStatus: string) => {
-    const token = localStorage.getItem("token");
     try {
-      await fetch(`${API_BASE}/orders/${orderId}/status`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
+      await updateOrderStatus(orderId, newStatus);
       // WebSocket will handle the update, but also update locally for immediate feedback
       if (newStatus === "done") {
         setOrders((prev) => prev.filter((o) => o.id !== orderId));
@@ -199,8 +182,10 @@ export default function KDSPage() {
           )
         );
       }
-    } catch (err) {
+      toast.success("Status pesanan diperbarui");
+    } catch (err: any) {
       console.error("Failed to update status:", err);
+      toast.error(err.message || "Gagal memperbarui status");
     }
   };
 

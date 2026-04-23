@@ -350,10 +350,22 @@ export const uploadImage = async (file: File): Promise<string> => {
   const formData = new FormData();
   formData.append("image", file);
 
-  const res = await api.post("/api/upload", formData, {
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+  const res = await fetch(`${API_BASE}/upload`, {
+    method: "POST",
+    body: formData,
     headers: {
-      "Content-Type": "multipart/form-data",
+      ...(token ? { "Authorization": `Bearer ${token}` } : {}),
     },
   });
-  return res.data.url;
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: "Upload failed" }));
+    throw new Error(error.error || `HTTP ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data.url;
 };

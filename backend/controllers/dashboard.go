@@ -22,19 +22,23 @@ type DashboardStats struct {
 
 // GetDashboardStats returns aggregated KPI data
 func GetDashboardStats(c *gin.Context) {
-	today := time.Now().Format("2006-01-02")
+	loc, _ := time.LoadLocation("Asia/Jakarta")
+	if loc == nil {
+		loc = time.FixedZone("Asia/Jakarta", 7*3600)
+	}
+	today := time.Now().In(loc).Format("2006-01-02")
 
 	var stats DashboardStats
 
 	// Today's revenue (sum of paid orders)
 	config.DB.Model(&models.Order{}).
-		Where("status IN ? AND DATE(created_at) = ?", []string{"pending", "processing", "done", "paid"}, today).
+		Where("status IN ? AND DATE(created_at) = ?", []string{"pending", "processing", "done", "completed", "paid"}, today).
 		Select("COALESCE(SUM(total_amount), 0)").
 		Scan(&stats.TodayRevenue)
 
 	// Today's completed transactions
 	config.DB.Model(&models.Order{}).
-		Where("status IN ? AND DATE(created_at) = ?", []string{"pending", "processing", "done", "paid"}, today).
+		Where("status IN ? AND DATE(created_at) = ?", []string{"pending", "processing", "done", "completed", "paid"}, today).
 		Count(&stats.TodayTransactions)
 
 	// Top selling menu item today
@@ -76,7 +80,7 @@ func GetDashboardStats(c *gin.Context) {
 func GetRecentTransactions(c *gin.Context) {
 	orders := []models.Order{}
 	config.DB.Preload("Table").Preload("Payment").Preload("User").
-		Where("status IN ?", []string{"pending", "processing", "done", "paid"}).
+		Where("status IN ?", []string{"pending", "processing", "done", "completed", "paid"}).
 		Order("created_at desc").
 		Limit(10).
 		Find(&orders)

@@ -28,6 +28,10 @@ func UploadImage(c *gin.Context) {
 	}
 
 	// Return the URL
-	fileUrl := fmt.Sprintf("http://localhost:8080/uploads/%s", newFileName)
+	port := "8181"
+	if p := c.GetHeader("X-Server-Port"); p != "" {
+		port = p
+	}
+	fileUrl := fmt.Sprintf("http://localhost:%s/uploads/%s", port, newFileName)
 	c.JSON(http.StatusOK, gin.H{"url": fileUrl})
 }

@@ -18,6 +18,26 @@ interface AuthStore {
   initialize: () => void;
 }
 
+const getStorage = () => {
+  if (typeof window === "undefined") return { token: null, user: null };
+  return {
+    token: localStorage.getItem("token"),
+    user: localStorage.getItem("user"),
+  };
+};
+
+const setStorage = (token: string, user: User) => {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("token", token);
+  localStorage.setItem("user", JSON.stringify(user));
+};
+
+const clearStorage = () => {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+};
+
 export const useAuthStore = create<AuthStore>((set) => ({
   token: null,
   user: null,
@@ -28,8 +48,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
     set({ isLoading: true, error: null });
     try {
       const res = await apiLogin(email, password);
-      localStorage.setItem("token", res.token);
-      localStorage.setItem("user", JSON.stringify(res.user));
+      setStorage(res.token, res.user);
       set({ token: res.token, user: res.user, isLoading: false });
     } catch (err) {
       set({
@@ -41,22 +60,22 @@ export const useAuthStore = create<AuthStore>((set) => ({
   },
 
   logout: () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    clearStorage();
     set({ token: null, user: null });
   },
 
   initialize: () => {
     if (typeof window === "undefined") return;
-    const token = localStorage.getItem("token");
-    const userStr = localStorage.getItem("user");
+    const { token, userStr } = {
+      token: localStorage.getItem("token"),
+      userStr: localStorage.getItem("user"),
+    };
     if (token && userStr) {
       try {
         const user = JSON.parse(userStr);
         set({ token, user });
       } catch {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
+        clearStorage();
       }
     }
   },

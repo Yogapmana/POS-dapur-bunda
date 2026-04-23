@@ -113,11 +113,9 @@ func CreateOrder(c *gin.Context) {
 	// Reload with associations
 	config.DB.Preload("OrderItems.MenuItem").Preload("Table").First(&order, order.ID)
 
-	// Broadcast new order to Kasir (not KDS yet, since it is unpaid)
-	// Currently WS is mainly for KDS, but Kasir might listen to it too.
-	// For now, Kasir can refresh or we can broadcast an "order_update" to trigger kasir refresh.
+	// Broadcast new order to Kasir
 	if ws.GlobalHub != nil {
-		ws.GlobalHub.BroadcastMessage("order_update", order)
+		ws.GlobalHub.BroadcastMessage("new_order", order)
 	}
 
 	c.JSON(http.StatusCreated, order)

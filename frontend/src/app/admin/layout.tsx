@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
@@ -33,22 +33,47 @@ export default function AdminLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout, initialize } = useAuthStore();
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     initialize();
-    const token = localStorage.getItem("token");
-    const userStr = localStorage.getItem("user");
-    
-    if (!token || !userStr) {
-      router.push("/login");
-      return;
-    }
-    
-    const u = JSON.parse(userStr);
-    if (u.role !== "admin") {
-      router.push("/kasir");
-    }
-  }, [initialize, router]);
+  }, [initialize]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const timer = setTimeout(() => {
+      if (!mounted) return;
+      
+      const token = localStorage.getItem("token");
+      const userStr = localStorage.getItem("user");
+      
+      if (!token || !userStr) {
+        router.push("/login");
+        return;
+      }
+      
+      try {
+        const u = JSON.parse(userStr);
+        if (u.role !== "admin") {
+          router.push("/kasir");
+          return;
+        }
+        if (mounted) setIsReady(true);
+      } catch {
+        router.push("/login");
+      }
+    }, 200);
+
+    return () => {
+      mounted = false;
+      clearTimeout(timer);
+    };
+  }, [router]);
+
+  if (!isReady) {
+    return null;
+  }
 
   const handleLogout = () => {
     logout();
