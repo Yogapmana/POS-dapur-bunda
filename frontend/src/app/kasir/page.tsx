@@ -46,6 +46,10 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
     label: "Siap",
     color: "bg-success/10 text-success border-success/20",
   },
+  completed: {
+    label: "Selesai",
+    color: "bg-gray-200 text-gray-800 border-gray-300",
+  },
   paid: {
     label: "Lunas",
     color: "bg-green-100 text-green-800 border-green-200",
@@ -173,7 +177,8 @@ export default function KasirPage() {
   const kitchenOrders = orders.filter((o) =>
     ["pending", "processing"].includes(o.status)
   );
-  const doneOrders = orders.filter((o) => ["done", "paid"].includes(o.status));
+  const readyOrders = orders.filter((o) => o.status === "done");
+  const completedOrders = orders.filter((o) => ["completed", "paid"].includes(o.status));
 
   return (
     <div className="flex h-[calc(100vh-3.5rem)]">
@@ -210,7 +215,7 @@ export default function KasirPage() {
           </div>
         ) : (
           <div className="divide-y divide-border">
-            {unpaidOrders.length === 0 && kitchenOrders.length === 0 && doneOrders.length === 0 ? (
+            {unpaidOrders.length === 0 && kitchenOrders.length === 0 && readyOrders.length === 0 && completedOrders.length === 0 ? (
               <div className="p-8 text-center text-muted-foreground text-sm">
                 Belum ada pesanan hari ini
               </div>
@@ -238,12 +243,23 @@ export default function KasirPage() {
                   </>
                 )}
 
-                {doneOrders.length > 0 && (
+                {readyOrders.length > 0 && (
+                  <>
+                    <div className="px-4 py-2 bg-success/10 text-xs font-medium text-success">
+                      Siap ({readyOrders.length})
+                    </div>
+                    {readyOrders.map((order) => (
+                      <OrderListItem key={order.id} order={order} selectedOrder={selectedOrder} setSelectedOrder={setSelectedOrder} setChangeAmount={setChangeAmount} />
+                    ))}
+                  </>
+                )}
+
+                {completedOrders.length > 0 && (
                   <>
                     <div className="px-4 py-2 bg-muted/30 text-xs font-medium text-muted-foreground">
-                      Selesai ({doneOrders.length})
+                      Selesai ({completedOrders.length})
                     </div>
-                    {doneOrders.slice(0, 10).map((order) => (
+                    {completedOrders.slice(0, 10).map((order) => (
                       <OrderListItem key={order.id} order={order} selectedOrder={selectedOrder} setSelectedOrder={setSelectedOrder} setChangeAmount={setChangeAmount} isFaded />
                     ))}
                   </>
@@ -357,6 +373,15 @@ export default function KasirPage() {
                   >
                     <CheckCircle size={16} className="mr-2" />
                     Tandai Siap (Manual)
+                  </Button>
+                )}
+                {selectedOrder.status === "done" && (
+                  <Button
+                    onClick={() => handleStatusChange(selectedOrder.id, "completed")}
+                    className="flex-1 bg-gray-600 hover:bg-gray-700 text-white cursor-pointer"
+                  >
+                    <CheckCircle size={16} className="mr-2" />
+                    Pesanan Diberikan
                   </Button>
                 )}
               </div>

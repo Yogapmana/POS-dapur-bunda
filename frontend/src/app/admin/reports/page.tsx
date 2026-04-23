@@ -27,6 +27,28 @@ import {
 } from "recharts";
 import { DollarSign, ShoppingBag, TrendingUp, Download } from "lucide-react";
 
+const formatCurrencyShared = (amount: number) => {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+  }).format(amount);
+};
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-background/95 border p-3 rounded-lg shadow-lg">
+        <p className="font-medium text-sm mb-1">{label}</p>
+        <p className="text-primary font-bold">
+          {formatCurrencyShared(payload[0].value)}
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export default function ReportsPage() {
   const [period, setPeriod] = useState<"daily" | "weekly" | "monthly">("daily");
   const [chartData, setChartData] = useState<ChartDataItem[]>([]);
@@ -72,20 +94,6 @@ export default function ReportsPage() {
       currency: "IDR",
       minimumFractionDigits: 0,
     }).format(amount);
-  };
-
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-background/95 border p-3 rounded-lg shadow-lg">
-          <p className="font-medium text-sm mb-1">{label}</p>
-          <p className="text-primary font-bold">
-            {formatCurrency(payload[0].value)}
-          </p>
-        </div>
-      );
-    }
-    return null;
   };
 
   return (
@@ -223,10 +231,10 @@ export default function ReportsPage() {
                 Belum ada data transaksi di periode ini.
               </div>
             ) : (
-              <div className="h-[300px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
+              <div className="relative h-[350px] w-full min-w-0 min-h-0 overflow-hidden">
+                <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                   {period === "daily" ? (
-                    <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <BarChart data={chartData} margin={{ top: 10, right: 10, left: 20, bottom: 10 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
                       <XAxis 
                         dataKey="label" 
@@ -241,11 +249,15 @@ export default function ReportsPage() {
                         tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
                         tickFormatter={(val) => `Rp${val / 1000}k`}
                       />
-                      <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--muted)/0.5)" }} />
-                      <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} barSize={40} />
+                      <Tooltip 
+                        content={<CustomTooltip />} 
+                        cursor={{ fill: "hsl(var(--muted)/0.5)" }} 
+                        isAnimationActive={false}
+                      />
+                      <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} barSize={40} activeBar={false} />
                     </BarChart>
                   ) : (
-                    <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <LineChart data={chartData} margin={{ top: 10, right: 10, left: 20, bottom: 10 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
                       <XAxis 
                         dataKey="label" 
@@ -260,7 +272,10 @@ export default function ReportsPage() {
                         tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
                         tickFormatter={(val) => `Rp${val / 1000}k`}
                       />
-                      <Tooltip content={<CustomTooltip />} />
+                      <Tooltip 
+                        content={<CustomTooltip />} 
+                        isAnimationActive={false}
+                      />
                       <Line 
                         type="monotone" 
                         dataKey="value" 

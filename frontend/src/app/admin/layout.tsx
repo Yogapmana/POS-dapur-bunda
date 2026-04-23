@@ -12,6 +12,7 @@ import {
   QrCode,
   Settings,
   LogOut,
+  Users,
 } from "lucide-react";
 
 const navItems = [
@@ -20,6 +21,7 @@ const navItems = [
   { href: "/admin/inventory", label: "Stok & Inventori", icon: Package },
   { href: "/admin/reports", label: "Laporan", icon: BarChart2 },
   { href: "/admin/tables", label: "Kelola Meja", icon: QrCode },
+  { href: "/admin/users", label: "Manajemen Akun", icon: Users },
   { href: "/admin/settings", label: "Pengaturan", icon: Settings },
 ];
 

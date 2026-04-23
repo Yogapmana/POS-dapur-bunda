@@ -103,6 +103,29 @@ export interface LoginResponse {
   };
 }
 
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  created_at: string;
+}
+
+export const getUsers = () => request<User[]>("/users");
+export const updateUser = (id: number, data: Partial<User> & { password?: string }) => 
+  request<User>(`/users/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+export const deleteUser = (id: number) =>
+  request<{ message: string }>(`/users/${id}`, { method: "DELETE" });
+export const createUser = (data: any) =>
+  request<{ user: User }>("/register", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+
 // --- Auth ---
 export const login = (email: string, password: string) =>
   request<LoginResponse>("/login", {
@@ -322,3 +345,15 @@ export const addInventoryTransaction = (data: {
   });
 export const getInventoryTransactions = (id: number) =>
   request<InventoryTransaction[]>(`/inventory/${id}/transactions`);
+
+export const uploadImage = async (file: File): Promise<string> => {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const res = await api.post("/api/upload", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return res.data.url;
+};

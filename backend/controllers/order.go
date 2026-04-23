@@ -135,10 +135,10 @@ func UpdateOrderStatus(c *gin.Context) {
 	}
 
 	validStatuses := map[string]bool{
-		"unpaid": true, "pending": true, "processing": true, "done": true, "paid": true, "cancelled": true,
+		"unpaid": true, "pending": true, "processing": true, "done": true, "completed": true, "paid": true, "cancelled": true,
 	}
 	if !validStatuses[input.Status] {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid status. Valid: unpaid, pending, processing, done, paid, cancelled"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid status. Valid: unpaid, pending, processing, done, completed, paid, cancelled"})
 		return
 	}
 
@@ -151,8 +151,8 @@ func UpdateOrderStatus(c *gin.Context) {
 	order.Status = input.Status
 	config.DB.Save(&order)
 
-	// If cancelled or paid, free the table
-	if (input.Status == "cancelled" || input.Status == "paid") && order.TableID != nil {
+	// If cancelled, completed, or paid, free the table
+	if (input.Status == "cancelled" || input.Status == "completed" || input.Status == "paid") && order.TableID != nil {
 		config.DB.Model(&models.Table{}).Where("id = ?", *order.TableID).Update("status", "available")
 	}
 

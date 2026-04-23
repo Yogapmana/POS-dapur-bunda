@@ -1,0 +1,71 @@
+Database connection established
+
+2026/04/23 09:04:52 [31;1m/home/raspberry/Documents/Skripsi/Satu/backend/seeds/seeder.go:64 [35;1mERROR: insert or update on table "menu_items" violates foreign key constraint "fk_menu_items_category" (SQLSTATE 23503)
+[0m[33m[0.726ms] [34;1m[rows:0][0m INSERT INTO "menu_items" ("category_id","name","description","price","image_url","is_available","stock_alert_threshold","created_at") VALUES (1,'Ayam Bakar Madu','Ayam kampung bakar dengan olesan madu spesial dan sambal matah',35000,'',true,0,'2026-04-23 09:04:52.168'),(1,'Nasi Goreng Spesial','Nasi goreng dengan telur, ayam suwir, dan kerupuk udang',28000,'',true,0,'2026-04-23 09:04:52.168'),(1,'Gurame Asam Manis','Ikan gurame fillet goreng tepung dengan saus asam manis segar',65000,'',true,0,'2026-04-23 09:04:52.168'),(1,'Soto Ayam Lamongan','Soto ayam kuah kuning khas Lamongan dengan koya dan sambal',25000,'',true,0,'2026-04-23 09:04:52.168'),(2,'Lumpia Udang','Lumpia goreng isi udang cincang dengan saus thai',18000,'',true,0,'2026-04-23 09:04:52.168'),(2,'Tahu Crispy','Tahu goreng tepung renyah disajikan dengan sambal kecap',12000,'',true,0,'2026-04-23 09:04:52.168'),(2,'Salad Buah Segar','Campuran buah segar dengan dressing yogurt madu',15000,'',true,0,'2026-04-23 09:04:52.168'),(3,'Es Teh Manis','Teh melati manis dengan es batu segar',8000,'',true,0,'2026-04-23 09:04:52.168'),(3,'Jus Alpukat','Jus alpukat kental dengan susu coklat dan gula aren',18000,'',true,0,'2026-04-23 09:04:52.168'),(3,'Kopi Susu Gula Aren','Espresso dengan susu segar dan sirup gula aren',22000,'',true,0,'2026-04-23 09:04:52.168') RETURNING "id"
+✓ Seeded menu items
+Database seeding complete!
+2026/04/23 09:04:52 WebSocket hub initialized
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /api/health               --> main.main.func1 (4 handlers)
+[GIN-debug] GET    /uploads/*filepath        --> github.com/gin-gonic/gin.(*RouterGroup).createStaticHandler.func1 (4 handlers)
+[GIN-debug] HEAD   /uploads/*filepath        --> github.com/gin-gonic/gin.(*RouterGroup).createStaticHandler.func1 (4 handlers)
+[GIN-debug] POST   /api/login                --> pos-backend/controllers.Login (4 handlers)
+[GIN-debug] POST   /api/register             --> pos-backend/controllers.Register (4 handlers)
+[GIN-debug] GET    /api/categories           --> pos-backend/controllers.GetCategories (4 handlers)
+[GIN-debug] GET    /api/menu                 --> pos-backend/controllers.GetMenuItems (4 handlers)
+[GIN-debug] GET    /api/tables/token/:token  --> pos-backend/controllers.GetTableByToken (4 handlers)
+[GIN-debug] POST   /api/orders               --> pos-backend/controllers.CreateOrder (4 handlers)
+[GIN-debug] POST   /api/upload               --> pos-backend/controllers.UploadImage (6 handlers)
+[GIN-debug] GET    /api/dashboard/stats      --> pos-backend/controllers.GetDashboardStats (5 handlers)
+[GIN-debug] GET    /api/dashboard/recent     --> pos-backend/controllers.GetRecentTransactions (5 handlers)
+[GIN-debug] GET    /api/reports/daily        --> pos-backend/controllers.GetDailyReport (6 handlers)
+[GIN-debug] GET    /api/reports/weekly       --> pos-backend/controllers.GetWeeklyReport (6 handlers)
+[GIN-debug] GET    /api/reports/monthly      --> pos-backend/controllers.GetMonthlyReport (6 handlers)
+[GIN-debug] GET    /api/reports/top-items    --> pos-backend/controllers.GetTopSellingItems (6 handlers)
+[GIN-debug] GET    /api/reports/summary      --> pos-backend/controllers.GetSalesSummary (6 handlers)
+[GIN-debug] GET    /api/reports/export       --> pos-backend/controllers.ExportSalesXLSX (6 handlers)
+[GIN-debug] POST   /api/categories           --> pos-backend/controllers.CreateCategory (6 handlers)
+[GIN-debug] PUT    /api/categories/:id       --> pos-backend/controllers.UpdateCategory (6 handlers)
+[GIN-debug] DELETE /api/categories/:id       --> pos-backend/controllers.DeleteCategory (6 handlers)
+[GIN-debug] POST   /api/menu                 --> pos-backend/controllers.CreateMenuItem (6 handlers)
+[GIN-debug] PUT    /api/menu/:id             --> pos-backend/controllers.UpdateMenuItem (6 handlers)
+[GIN-debug] DELETE /api/menu/:id             --> pos-backend/controllers.DeleteMenuItem (6 handlers)
+[GIN-debug] PATCH  /api/menu/:id/toggle      --> pos-backend/controllers.ToggleMenuAvailability (6 handlers)
+[GIN-debug] GET    /api/orders               --> pos-backend/controllers.GetOrders (5 handlers)
+[GIN-debug] GET    /api/orders/:id           --> pos-backend/controllers.GetOrderByID (5 handlers)
+[GIN-debug] PATCH  /api/orders/:id/status    --> pos-backend/controllers.UpdateOrderStatus (5 handlers)
+[GIN-debug] DELETE /api/orders/:id/items/:itemId --> pos-backend/controllers.DeleteOrderItem (5 handlers)
+[GIN-debug] POST   /api/payments             --> pos-backend/controllers.ProcessPayment (5 handlers)
+[GIN-debug] GET    /api/payments/order/:orderId --> pos-backend/controllers.GetPaymentByOrderID (5 handlers)
+[GIN-debug] GET    /api/tables               --> pos-backend/controllers.GetTables (5 handlers)
+[GIN-debug] POST   /api/tables               --> pos-backend/controllers.CreateTable (6 handlers)
+[GIN-debug] PATCH  /api/tables/:id/status    --> pos-backend/controllers.UpdateTableStatus (5 handlers)
+[GIN-debug] DELETE /api/tables/:id           --> pos-backend/controllers.DeleteTable (6 handlers)
+[GIN-debug] GET    /api/inventory            --> pos-backend/controllers.GetInventory (6 handlers)
+[GIN-debug] POST   /api/inventory            --> pos-backend/controllers.CreateInventoryItem (6 handlers)
+[GIN-debug] PUT    /api/inventory/:id        --> pos-backend/controllers.UpdateInventoryItem (6 handlers)
+[GIN-debug] DELETE /api/inventory/:id        --> pos-backend/controllers.DeleteInventoryItem (6 handlers)
+[GIN-debug] POST   /api/inventory/transactions --> pos-backend/controllers.AddInventoryTransaction (6 handlers)
+[GIN-debug] GET    /api/inventory/:id/transactions --> pos-backend/controllers.GetInventoryTransactions (6 handlers)
+[GIN-debug] GET    /api/users                --> pos-backend/controllers.GetUsers (6 handlers)
+[GIN-debug] PUT    /api/users/:id            --> pos-backend/controllers.UpdateUser (6 handlers)
+[GIN-debug] DELETE /api/users/:id            --> pos-backend/controllers.DeleteUser (6 handlers)
+[GIN-debug] GET    /ws                       --> pos-backend/routes.SetupRoutes.ServeWs.func27 (4 handlers)
+[GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+Please check https://github.com/gin-gonic/gin/blob/master/docs/doc.md#dont-trust-all-proxies for details.
+[GIN-debug] Listening and serving HTTP on :8181
+[GIN] 2026/04/23 - 09:05:29 | 204 | 183.301µs |             ::1 | OPTIONS  "/api/dashboard/stats"
+[GIN] 2026/04/23 - 09:05:29 | 204 | 105.66µs |             ::1 | OPTIONS  "/api/dashboard/recent"
+[GIN] 2026/04/23 - 09:05:29 | 200 |  21.71ms |             ::1 | GET      "/api/dashboard/stats"
+[GIN] 2026/04/23 - 09:05:29 | 200 |   30.3ms |             ::1 | GET      "/api/dashboard/recent"
+[GIN] 2026/04/23 - 09:06:29 | 204 | 20.705µs |             ::1 | OPTIONS  "/api/dashboard/stats"
+[GIN] 2026/04/23 - 09:06:29 | 204 | 15.887µs |             ::1 | OPTIONS  "/api/dashboard/recent"
+[GIN] 2026/04/23 - 09:06:29 | 200 |   2.75ms |             ::1 | GET      "/api/dashboard/recent"
+[GIN] 2026/04/23 - 09:06:29 | 200 |  10.55ms |             ::1 | GET      "/api/dashboard/stats"
+[GIN] 2026/04/23 - 09:06:33 | 200 | 504.361µs |             ::1 | GET      "/api/dashboard/recent"
+[GIN] 2026/04/23 - 09:06:33 | 200 |   1.69ms |             ::1 | GET      "/api/dashboard/stats"

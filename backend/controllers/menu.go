@@ -118,6 +118,15 @@ func DeleteMenuItem(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Menu item not found"})
 		return
 	}
+
+	// Cek apakah menu item sedang digunakan di dalam OrderItem
+	var count int64
+	config.DB.Model(&models.OrderItem{}).Where("menu_item_id = ?", id).Count(&count)
+	if count > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Tidak dapat menghapus menu yang sudah pernah dipesan. Silakan gunakan fitur 'Tandai Habis' sebagai gantinya."})
+		return
+	}
+
 	config.DB.Delete(&menuItem)
 	c.JSON(http.StatusOK, gin.H{"message": "Menu item deleted"})
 }

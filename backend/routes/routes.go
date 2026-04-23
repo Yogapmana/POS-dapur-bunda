@@ -11,6 +11,9 @@ import (
 func SetupRoutes(r *gin.Engine) {
 	api := r.Group("/api")
 	{
+		// Static file serving for uploads
+		r.Static("/uploads", "./uploads")
+
 		// Auth (public)
 		api.POST("/login", controllers.Login)
 		api.POST("/register", controllers.Register)
@@ -27,7 +30,8 @@ func SetupRoutes(r *gin.Engine) {
 		protected := api.Group("")
 		protected.Use(middleware.AuthMiddleware())
 		{
-			// Dashboard
+			// Image upload
+			protected.POST("/upload", middleware.RoleMiddleware("admin"), controllers.UploadImage)
 			protected.GET("/dashboard/stats", controllers.GetDashboardStats)
 			protected.GET("/dashboard/recent", controllers.GetRecentTransactions)
 
@@ -73,6 +77,12 @@ func SetupRoutes(r *gin.Engine) {
 			protected.DELETE("/inventory/:id", middleware.RoleMiddleware("admin"), controllers.DeleteInventoryItem)
 			protected.POST("/inventory/transactions", middleware.RoleMiddleware("admin"), controllers.AddInventoryTransaction)
 			protected.GET("/inventory/:id/transactions", middleware.RoleMiddleware("admin"), controllers.GetInventoryTransactions)
+
+			// Users (admin only)
+			protected.GET("/users", middleware.RoleMiddleware("admin"), controllers.GetUsers)
+			protected.PUT("/users/:id", middleware.RoleMiddleware("admin"), controllers.UpdateUser)
+			protected.DELETE("/users/:id", middleware.RoleMiddleware("admin"), controllers.DeleteUser)
+			// (Create User is handled by /api/register, but we can use it inside the admin panel)
 		}
 	}
 

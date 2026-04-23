@@ -8,6 +8,7 @@ import {
   updateMenuItem,
   deleteMenuItem,
   toggleMenuAvailability,
+  uploadImage,
 } from "@/lib/api";
 import type { MenuItem, Category } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,13 +21,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, Eye, EyeOff, Search, Pencil } from "lucide-react";
+import { Plus, Trash2, Eye, EyeOff, Search, Pencil, Image as ImageIcon } from "lucide-react";
 
 interface MenuFormData {
   name: string;
   description: string;
   price: number;
   category_id: number;
+  image_url: string;
 }
 
 const emptyForm: MenuFormData = {
@@ -34,6 +36,7 @@ const emptyForm: MenuFormData = {
   description: "",
   price: 0,
   category_id: 0,
+  image_url: "",
 };
 
 export default function MenuManagementPage() {
@@ -85,6 +88,7 @@ export default function MenuManagementPage() {
       description: item.description,
       price: item.price,
       category_id: item.category_id,
+      image_url: item.image_url || "",
     });
     setIsDialogOpen(true);
   };
@@ -120,8 +124,9 @@ export default function MenuManagementPage() {
     try {
       await deleteMenuItem(id);
       fetchData();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to delete:", err);
+      alert(err.message || "Gagal menghapus menu. Menu ini mungkin sedang digunakan dalam pesanan aktif.");
     }
   };
 
@@ -233,6 +238,45 @@ export default function MenuManagementPage() {
                 ))}
               </select>
             </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Gambar (Opsional)</label>
+              <div className="flex items-center gap-3">
+                {formData.image_url ? (
+                  <div className="relative h-16 w-16 shrink-0 rounded overflow-hidden border">
+                    <img 
+                      src={formData.image_url} 
+                      alt="Preview" 
+                      className="w-full h-full object-cover" 
+                    />
+                    <button 
+                      type="button"
+                      className="absolute top-0 right-0 bg-red-500 text-white rounded-bl p-0.5 cursor-pointer"
+                      onClick={() => setFormData({ ...formData, image_url: "" })}
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="h-16 w-16 shrink-0 bg-muted rounded flex items-center justify-center border border-dashed">
+                    <ImageIcon size={20} className="text-muted-foreground" />
+                  </div>
+                )}
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    try {
+                      const url = await uploadImage(file);
+                      setFormData({ ...formData, image_url: url });
+                    } catch (err) {
+                      alert("Gagal mengunggah gambar");
+                    }
+                  }}
+                />
+              </div>
+            </div>
             <Button
               type="submit"
               className="w-full bg-primary hover:bg-primary/90 cursor-pointer"
@@ -320,11 +364,24 @@ export default function MenuManagementPage() {
                       className="border-b last:border-0 hover:bg-muted/50"
                     >
                       <td className="py-3">
-                        <div>
-                          <p className="font-medium">{item.name}</p>
-                          <p className="text-xs text-muted-foreground line-clamp-1">
-                            {item.description}
-                          </p>
+                        <div className="flex items-center gap-3">
+                          {item.image_url ? (
+                            <img 
+                              src={item.image_url} 
+                              alt={item.name} 
+                              className="w-10 h-10 rounded object-cover shrink-0 border"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded bg-muted flex items-center justify-center shrink-0 border">
+                              <ImageIcon size={16} className="text-muted-foreground" />
+                            </div>
+                          )}
+                          <div>
+                            <p className="font-medium">{item.name}</p>
+                            <p className="text-xs text-muted-foreground line-clamp-1">
+                              {item.description}
+                            </p>
+                          </div>
                         </div>
                       </td>
                       <td className="py-3">
