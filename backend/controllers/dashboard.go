@@ -74,7 +74,7 @@ func GetDashboardStats(c *gin.Context) {
 
 // GetRecentTransactions returns the latest 10 paid orders
 func GetRecentTransactions(c *gin.Context) {
-	var orders []models.Order
+	orders := []models.Order{}
 	config.DB.Preload("Table").Preload("Payment").Preload("User").
 		Where("status IN ?", []string{"pending", "processing", "done", "paid"}).
 		Order("created_at desc").

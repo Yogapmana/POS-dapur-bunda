@@ -103,7 +103,7 @@ func ProcessPayment(c *gin.Context) {
 		ws.GlobalHub.BroadcastMessage("new_order", order)
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusCreated, gin.H{
 		"message":       "Payment successful",
 		"order":         order,
 		"change_amount": changeAmount,

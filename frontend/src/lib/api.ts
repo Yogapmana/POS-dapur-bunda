@@ -242,6 +242,28 @@ export interface SalesSummary {
   average_order_value: number;
 }
 
+export interface InventoryItem {
+  id: number;
+  name: string;
+  unit: string;
+  current_stock: number;
+  min_stock: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InventoryTransaction {
+  id: number;
+  inventory_item_id: number;
+  inventory_item?: InventoryItem;
+  type: "in" | "out";
+  quantity: number;
+  notes: string;
+  user_id: number;
+  user?: { id: number; name: string };
+  created_at: string;
+}
+
 export const getDailyReport = () => request<ChartDataItem[]>("/reports/daily");
 export const getWeeklyReport = () => request<ChartDataItem[]>("/reports/weekly");
 export const getMonthlyReport = () => request<ChartDataItem[]>("/reports/monthly");
@@ -251,3 +273,52 @@ export const getTopSellingItems = (period: string = "all") =>
 
 export const getSalesSummary = (period: string = "all") =>
   request<SalesSummary>(`/reports/summary?period=${period}`);
+
+export const exportSalesReport = (period = "all") => {
+  const token = localStorage.getItem("token");
+  const url = `${API_BASE}/reports/export?period=${period}`;
+  
+  // Download file using fetch to include headers
+  return fetch(url, {
+    headers: {
+      "Authorization": `Bearer ${token}`
+    }
+  }).then(async (res) => {
+    if (!res.ok) throw new Error("Export failed");
+    const blob = await res.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.setAttribute('download', `sales_report_${period}.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  });
+};
+
+// --- Inventory ---
+export const getInventory = () => request<InventoryItem[]>("/inventory");
+export const createInventoryItem = (data: Partial<InventoryItem>) =>
+  request<InventoryItem>("/inventory", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+export const updateInventoryItem = (id: number, data: Partial<InventoryItem>) =>
+  request<InventoryItem>(`/inventory/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+export const deleteInventoryItem = (id: number) =>
+  request<{ message: string }>(`/inventory/${id}`, { method: "DELETE" });
+export const addInventoryTransaction = (data: {
+  inventory_item_id: number;
+  type: "in" | "out";
+  quantity: number;
+  notes?: string;
+}) =>
+  request<InventoryTransaction>("/inventory/transactions", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+export const getInventoryTransactions = (id: number) =>
+  request<InventoryTransaction[]>(`/inventory/${id}/transactions`);

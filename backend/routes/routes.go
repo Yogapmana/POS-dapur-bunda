@@ -13,6 +13,7 @@ func SetupRoutes(r *gin.Engine) {
 	{
 		// Auth (public)
 		api.POST("/login", controllers.Login)
+		api.POST("/register", controllers.Register)
 
 		// Public endpoints (for self-order)
 		api.GET("/categories", controllers.GetCategories)
@@ -36,6 +37,7 @@ func SetupRoutes(r *gin.Engine) {
 			protected.GET("/reports/monthly", middleware.RoleMiddleware("admin"), controllers.GetMonthlyReport)
 			protected.GET("/reports/top-items", middleware.RoleMiddleware("admin"), controllers.GetTopSellingItems)
 			protected.GET("/reports/summary", middleware.RoleMiddleware("admin"), controllers.GetSalesSummary)
+			protected.GET("/reports/export", middleware.RoleMiddleware("admin"), controllers.ExportSalesXLSX)
 
 			// Categories (admin only)
 			protected.POST("/categories", middleware.RoleMiddleware("admin"), controllers.CreateCategory)
@@ -63,6 +65,14 @@ func SetupRoutes(r *gin.Engine) {
 			protected.POST("/tables", middleware.RoleMiddleware("admin"), controllers.CreateTable)
 			protected.PATCH("/tables/:id/status", controllers.UpdateTableStatus)
 			protected.DELETE("/tables/:id", middleware.RoleMiddleware("admin"), controllers.DeleteTable)
+
+			// Inventory (admin only)
+			protected.GET("/inventory", middleware.RoleMiddleware("admin"), controllers.GetInventory)
+			protected.POST("/inventory", middleware.RoleMiddleware("admin"), controllers.CreateInventoryItem)
+			protected.PUT("/inventory/:id", middleware.RoleMiddleware("admin"), controllers.UpdateInventoryItem)
+			protected.DELETE("/inventory/:id", middleware.RoleMiddleware("admin"), controllers.DeleteInventoryItem)
+			protected.POST("/inventory/transactions", middleware.RoleMiddleware("admin"), controllers.AddInventoryTransaction)
+			protected.GET("/inventory/:id/transactions", middleware.RoleMiddleware("admin"), controllers.GetInventoryTransactions)
 		}
 	}
 

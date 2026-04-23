@@ -25,7 +25,7 @@ type OrderItemInput struct {
 
 // GetOrders returns all orders, optionally filtered by status and date
 func GetOrders(c *gin.Context) {
-	var orders []models.Order
+	orders := []models.Order{}
 	query := config.DB.Preload("OrderItems.MenuItem").Preload("Table").Preload("User").Preload("Payment")
 
 	// Filter by status

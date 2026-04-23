@@ -7,6 +7,7 @@ import {
   getMonthlyReport,
   getSalesSummary,
   getTopSellingItems,
+  exportSalesReport,
   ChartDataItem,
   SalesSummary,
   TopItem,
@@ -124,7 +125,18 @@ export default function ReportsPage() {
               Bulan Ini
             </Button>
           </div>
-          <Button variant="outline" size="sm" className="cursor-pointer">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="cursor-pointer"
+            onClick={async () => {
+              try {
+                await exportSalesReport(period);
+              } catch (err) {
+                alert("Gagal mengekspor laporan");
+              }
+            }}
+          >
             <Download size={16} className="mr-2" />
             Export
           </Button>
@@ -206,7 +218,7 @@ export default function ReportsPage() {
               <div className="h-[300px] flex items-center justify-center text-muted-foreground animate-pulse">
                 Memuat grafik...
               </div>
-            ) : chartData.length === 0 ? (
+            ) : !chartData || chartData.length === 0 ? (
               <div className="h-[300px] flex items-center justify-center text-muted-foreground">
                 Belum ada data transaksi di periode ini.
               </div>
@@ -276,7 +288,7 @@ export default function ReportsPage() {
               <div className="py-12 flex justify-center text-muted-foreground animate-pulse text-sm">
                 Memuat...
               </div>
-            ) : topItems.length === 0 ? (
+            ) : !topItems || topItems.length === 0 ? (
               <div className="py-12 flex justify-center text-muted-foreground text-sm text-center">
                 Belum ada penjualan.
               </div>

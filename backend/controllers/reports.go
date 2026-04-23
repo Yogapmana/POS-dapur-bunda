@@ -6,9 +6,89 @@ import (
 
 	"pos-backend/config"
 	"pos-backend/models"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"github.com/xuri/excelize/v2"
 )
+
+// ExportSalesXLSX generates an Excel report of sales
+func ExportSalesXLSX(c *gin.Context) {
+	period := c.DefaultQuery("period", "all")
+	var orders []models.Order
+
+	query := config.DB.Preload("Payment").Preload("User").Preload("Table").
+		Where("status IN ?", []string{"pending", "processing", "done", "paid"})
+
+	if period == "daily" {
+		today := time.Now().Format("2006-01-02")
+		query = query.Where("DATE(created_at) = ?", today)
+	} else if period == "weekly" {
+		query = query.Where("created_at >= current_date - interval '7 days'")
+	} else if period == "monthly" {
+		query = query.Where("date_trunc('month', created_at) = date_trunc('month', current_date)")
+	}
+
+	if err := query.Order("created_at desc").Find(&orders).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	f := excelize.NewFile()
+	sheetName := "Sales Report"
+	f.SetSheetName("Sheet1", sheetName)
+
+	// Set headers
+	headers := []string{"ID Transaksi", "Tanggal", "Nama Pelanggan", "Meja", "Kasir", "Total", "Metode Bayar", "Status"}
+	for i, header := range headers {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+		f.SetCellValue(sheetName, cell, header)
+	}
+
+	// Set data
+	for i, order := range orders {
+		row := i + 2
+		tableName := "Walk-in"
+		if order.Table != nil {
+			tableName = order.Table.Number
+		}
+		kasirName := "N/A"
+		if order.User != nil {
+			kasirName = order.User.Name
+		}
+		paymentMethod := "N/A"
+		if order.Payment != nil {
+			paymentMethod = order.Payment.Method
+		}
+
+		f.SetCellValue(sheetName, fmt.Sprintf("A%d", row), order.ID)
+		f.SetCellValue(sheetName, fmt.Sprintf("B%d", row), order.CreatedAt.Format("2006-01-02 15:04:05"))
+		f.SetCellValue(sheetName, fmt.Sprintf("C%d", row), order.CustomerName)
+		f.SetCellValue(sheetName, fmt.Sprintf("D%d", row), tableName)
+		f.SetCellValue(sheetName, fmt.Sprintf("E%d", row), kasirName)
+		f.SetCellValue(sheetName, fmt.Sprintf("F%d", row), order.TotalAmount)
+		f.SetCellValue(sheetName, fmt.Sprintf("G%d", row), paymentMethod)
+		f.SetCellValue(sheetName, fmt.Sprintf("H%d", row), order.Status)
+	}
+
+	// Set column widths
+	f.SetColWidth(sheetName, "A", "A", 15)
+	f.SetColWidth(sheetName, "B", "B", 20)
+	f.SetColWidth(sheetName, "C", "C", 20)
+	f.SetColWidth(sheetName, "D", "D", 10)
+	f.SetColWidth(sheetName, "E", "E", 15)
+	f.SetColWidth(sheetName, "F", "F", 15)
+	f.SetColWidth(sheetName, "G", "G", 15)
+	f.SetColWidth(sheetName, "H", "H", 15)
+
+	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=sales_report_%s.xlsx", period))
+	
+	if err := f.Write(c.Writer); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate Excel"})
+	}
+}
+
 
 // ChartDataItem represents a single data point for charts
 type ChartDataItem struct {
@@ -19,7 +99,7 @@ type ChartDataItem struct {
 // GetDailyReport returns revenue per hour for today
 func GetDailyReport(c *gin.Context) {
 	today := time.Now().Format("2006-01-02")
-	var data []ChartDataItem
+	data := []ChartDataItem{}
 
 	// Postgres specific date truncation/formatting
 	query := `
@@ -40,7 +120,7 @@ func GetDailyReport(c *gin.Context) {
 
 // GetWeeklyReport returns revenue per day for the last 7 days
 func GetWeeklyReport(c *gin.Context) {
-	var data []ChartDataItem
+	data := []ChartDataItem{}
 
 	query := `
 		SELECT to_char(created_at, 'YYYY-MM-DD') as label, SUM(total_amount) as value
@@ -60,7 +140,7 @@ func GetWeeklyReport(c *gin.Context) {
 
 // GetMonthlyReport returns revenue per day for the current month
 func GetMonthlyReport(c *gin.Context) {
-	var data []ChartDataItem
+	data := []ChartDataItem{}
 
 	query := `
 		SELECT to_char(created_at, 'YYYY-MM-DD') as label, SUM(total_amount) as value
@@ -87,7 +167,7 @@ type TopItem struct {
 
 // GetTopSellingItems returns the top 10 selling items
 func GetTopSellingItems(c *gin.Context) {
-	var data []TopItem
+	data := []TopItem{}
 	
 	// period can be 'daily', 'weekly', 'monthly', default 'all'
 	period := c.DefaultQuery("period", "all")

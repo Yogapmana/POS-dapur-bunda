@@ -202,53 +202,71 @@ export default function SelfOrderPage({
             return (
               <div
                 key={item.id}
-                className="bg-white rounded-xl shadow-sm border border-border overflow-hidden flex flex-col"
+                className="bg-white rounded-2xl shadow-sm border border-border/50 overflow-hidden flex flex-col transition-all active:scale-[0.98]"
               >
-                <div className="aspect-[4/3] bg-muted relative">
+                <div className="aspect-[4/3] bg-muted relative overflow-hidden">
+                  {item.image_url ? (
+                    <img 
+                      src={item.image_url} 
+                      alt={item.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground/20">
+                      <Plus size={32} />
+                    </div>
+                  )}
                   {/* Category badge */}
-                  <Badge className="absolute top-2 left-2 z-10 bg-primary/80 text-white text-[10px]">
-                    {item.category?.name}
-                  </Badge>
+                  <div className="absolute top-2 left-2 z-10">
+                    <Badge className="bg-primary/90 text-white text-[9px] px-2 py-0.5 border-none backdrop-blur-sm">
+                      {categories.find(c => c.id === item.category_id)?.name}
+                    </Badge>
+                  </div>
                 </div>
                 <div className="p-3 flex-1 flex flex-col">
-                  <h3 className="font-bold text-sm leading-tight line-clamp-2">
+                  <h3 className="font-bold text-sm leading-tight line-clamp-2 min-h-[2.5rem]">
                     {item.name}
                   </h3>
-                  <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">
+                  <p className="text-[10px] text-muted-foreground mt-1 line-clamp-2 h-7 leading-tight">
                     {item.description}
                   </p>
-                  <div className="mt-auto pt-3 flex items-center justify-between">
-                    <span className="font-bold text-primary text-sm font-mono">
+                  
+                  <div className="mt-3 flex flex-col gap-2">
+                    <span className="font-bold text-primary text-sm font-mono leading-none">
                       {formatPrice(item.price)}
                     </span>
-                    {cartItem ? (
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() =>
-                            updateQuantity(item.id, cartItem.quantity - 1)
-                          }
-                          className="w-7 h-7 rounded-full bg-muted flex items-center justify-center"
-                        >
-                          <Minus size={12} />
-                        </button>
-                        <span className="w-6 text-center text-sm font-bold">
-                          {cartItem.quantity}
-                        </span>
-                        <button
+                    
+                    <div className="flex items-center justify-between gap-1 h-9">
+                      {cartItem ? (
+                        <div className="flex items-center bg-muted/50 rounded-lg p-0.5 w-full justify-between">
+                          <button
+                            onClick={() =>
+                              updateQuantity(item.id, cartItem.quantity - 1)
+                            }
+                            className="w-7 h-7 rounded-md bg-white shadow-sm flex items-center justify-center text-primary active:bg-muted transition-colors"
+                          >
+                            <Minus size={12} />
+                          </button>
+                          <span className="text-xs font-bold px-1">
+                            {cartItem.quantity}
+                          </span>
+                          <button
+                            onClick={() => handleAddToCart(item)}
+                            className="w-7 h-7 rounded-md bg-secondary text-secondary-foreground shadow-sm flex items-center justify-center active:bg-secondary/80 transition-colors"
+                          >
+                            <Plus size={12} />
+                          </button>
+                        </div>
+                      ) : (
+                        <Button
                           onClick={() => handleAddToCart(item)}
-                          className="w-7 h-7 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center"
+                          size="sm"
+                          className="w-full h-8 rounded-lg bg-secondary hover:bg-secondary/90 text-secondary-foreground text-[11px] font-bold py-0"
                         >
-                          <Plus size={12} />
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => handleAddToCart(item)}
-                        className="w-8 h-8 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center"
-                      >
-                        <Plus size={16} />
-                      </button>
-                    )}
+                          Tambah
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

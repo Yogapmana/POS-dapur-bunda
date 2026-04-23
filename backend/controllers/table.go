@@ -32,11 +32,28 @@ func GetTableByToken(c *gin.Context) {
 
 // CreateTable creates a new table
 func CreateTable(c *gin.Context) {
-	var table models.Table
-	if err := c.ShouldBindJSON(&table); err != nil {
+	var input struct {
+		Number      string `json:"number" binding:"required"`
+		QRCodeToken string `json:"qr_code_token"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	token := input.QRCodeToken
+	if token == "" {
+		// Generate a simple token if missing
+		token = "table-" + input.Number
+	}
+
+	table := models.Table{
+		Number:      input.Number,
+		QRCodeToken: token,
+		Status:      "available",
+	}
+
 	if err := config.DB.Create(&table).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
