@@ -24,8 +24,8 @@ export default function KasirLayout({
     const timer = setTimeout(() => {
       if (!mounted) return;
       
-      const token = localStorage.getItem("token");
-      const userStr = localStorage.getItem("user");
+      const token = localStorage.getItem("token_kasir");
+      const userStr = localStorage.getItem("user_kasir");
       
       if (!token || !userStr) {
         router.push("/login");

@@ -83,7 +83,7 @@ export default function KDSPage() {
   // Fetch initial orders
   const fetchOrders = useCallback(async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("token_kasir");
       if (!token) {
         router.push("/login");
         return;

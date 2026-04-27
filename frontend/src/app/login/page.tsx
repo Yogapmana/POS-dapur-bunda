@@ -17,15 +17,8 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await login(email, password);
-      // Redirect based on role
-      const userStr = localStorage.getItem("user");
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        router.push(user.role === "kasir" ? "/kasir" : "/admin");
-      } else {
-        router.push("/admin");
-      }
+      const user = await login(email, password);
+      router.push(user.role === "kasir" ? "/kasir" : "/admin");
     } catch {
       // error is set in the store
     }

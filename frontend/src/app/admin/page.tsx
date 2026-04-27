@@ -46,7 +46,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const fetchDashboard = async () => {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("token_admin");
       if (!token) {
         window.location.href = "/login";
         return;

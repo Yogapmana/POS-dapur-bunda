@@ -5,8 +5,17 @@ async function request<T>(
   endpoint: string,
   options?: RequestInit
 ): Promise<T> {
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  let token = null;
+  if (typeof window !== "undefined") {
+    const path = window.location.pathname;
+    if (path.startsWith("/admin")) {
+      token = localStorage.getItem("token_admin");
+    } else if (path.startsWith("/kasir") || path.startsWith("/kds")) {
+      token = localStorage.getItem("token_kasir");
+    } else {
+      token = localStorage.getItem("token_admin") || localStorage.getItem("token_kasir");
+    }
+  }
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -298,7 +307,7 @@ export const getSalesSummary = (period: string = "all") =>
   request<SalesSummary>(`/reports/summary?period=${period}`);
 
 export const exportSalesReport = (period = "all") => {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token_admin");
   const url = `${API_BASE}/reports/export?period=${period}`;
   
   // Download file using fetch to include headers
@@ -351,7 +360,7 @@ export const uploadImage = async (file: File): Promise<string> => {
   formData.append("image", file);
 
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    typeof window !== "undefined" ? localStorage.getItem("token_admin") : null;
 
   const res = await fetch(`${API_BASE}/upload`, {
     method: "POST",

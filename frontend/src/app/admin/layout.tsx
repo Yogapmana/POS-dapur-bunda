@@ -45,8 +45,8 @@ export default function AdminLayout({
     const timer = setTimeout(() => {
       if (!mounted) return;
       
-      const token = localStorage.getItem("token");
-      const userStr = localStorage.getItem("user");
+      const token = localStorage.getItem("token_admin");
+      const userStr = localStorage.getItem("user_admin");
       
       if (!token || !userStr) {
         router.push("/login");
